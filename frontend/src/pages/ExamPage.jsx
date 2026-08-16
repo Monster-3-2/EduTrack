@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Upload, FileText, AlertTriangle, TrendingUp, SkipForward, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
-
+//updated nothing
 const API = import.meta.env.VITE_API_URL || ''
 
 export default function ExamPage() {
