@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EduTrack</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --black: #000; --white: #fff;
+  --gray-400: #999; --gray-600: #555;
+  --accent: #7c6fff; --accent2: #a78bfa;
+  --card-bg: #111; --border: #222;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--black); color: var(--white); font-family: 'Inter', sans-serif; overflow-x: hidden; }
+
+/* ── LOADER ── */
+#loader {
+  position: fixed; inset: 0; background: #000; z-index: 9999;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  transition: opacity 0.8s ease;
+}
+#loader .pct { font-size: 5rem; font-weight: 700; letter-spacing: -4px; }
+#loader .load-label { font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray-600); margin-top: 0.5rem; }
+#loader.hide { opacity: 0; pointer-events: none; }
+
+/* ── VIDEO BG ── */
+#video-bg-wrap {
+  position: fixed; inset: 0; z-index: 0;
+  overflow: hidden; pointer-events: none;
+}
+#bg-video {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  opacity: 0.55;
+  filter: brightness(1.3) saturate(1.8) contrast(1.1);
+  will-change: opacity;
+}
+/* Dark overlay so text stays readable */
+#video-overlay {
+  position: fixed; inset: 0; z-index: 1;
+  background: linear-gradient(to bottom,
+    rgba(0,0,0,0.35) 0%,
+    rgba(0,0,0,0.15) 40%,
+    rgba(0,0,0,0.35) 100%);
+  pointer-events: none;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.2rem 3rem;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  transition: background 0.3s;
+}
+nav.scrolled { background: rgba(0,0,0,0.92); }
+.nav-logo { font-size: 1.1rem; font-weight: 700; letter-spacing: 0.05em; color: var(--white); text-decoration: none; }
+.nav-links { display: flex; gap: 2rem; list-style: none; }
+.nav-links a { color: var(--gray-400); text-decoration: none; font-size: 0.875rem; transition: color 0.2s; }
+.nav-links a:hover { color: var(--white); }
+.nav-cta {
+  background: var(--white); color: var(--black);
+  padding: 0.55rem 1.3rem; border-radius: 2rem;
+  font-size: 0.875rem; font-weight: 600; text-decoration: none;
+  display: flex; align-items: center; gap: 0.5rem;
+  transition: background 0.2s, color 0.2s;
+}
+.nav-cta:hover { background: var(--accent); color: #fff; }
+.nav-cta svg { width: 13px; height: 13px; }
+
+/* ── ALL CONTENT ABOVE VIDEO ── */
+main { position: relative; z-index: 10; }
+
+/* ── HERO ── */
+#hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 8rem 2rem 4rem;
+  position: relative;
+}
+.hero-glow {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 70% 50% at 50% 40%, rgba(124,111,255,0.12) 0%, transparent 70%);
+}
+.hero-tag {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.25em;
+  color: var(--gray-400); text-transform: uppercase; margin-bottom: 1.5rem;
+  border: 1px solid var(--border); padding: 0.4rem 1rem; border-radius: 2rem;
+  display: inline-block; backdrop-filter: blur(4px);
+}
+.hero-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(3rem, 7vw, 6.5rem);
+  font-weight: 700; line-height: 1.04; margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, #fff 55%, #a78bfa 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.hero-sub {
+  font-size: 1rem; color: var(--gray-400); max-width: 460px;
+  margin: 0 auto 2.5rem; line-height: 1.75;
+}
+.hero-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+.btn-primary {
+  background: var(--white); color: var(--black);
+  padding: 0.75rem 1.8rem; border-radius: 2rem; font-weight: 600;
+  text-decoration: none; font-size: 0.9rem;
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(255,255,255,0.18); }
+.btn-primary svg { width: 13px; height: 13px; }
+.btn-secondary {
+  border: 1px solid #333; color: var(--white);
+  padding: 0.75rem 1.8rem; border-radius: 2rem;
+  font-weight: 500; text-decoration: none; font-size: 0.9rem;
+  backdrop-filter: blur(4px); background: rgba(255,255,255,0.04);
+  transition: border-color 0.2s, background 0.2s;
+}
+.btn-secondary:hover { border-color: #666; background: rgba(255,255,255,0.08); }
+.scroll-hint {
+  position: absolute; bottom: 2.5rem; left: 50%; transform: translateX(-50%);
+  font-size: 0.7rem; color: var(--gray-600); letter-spacing: 0.12em;
+  text-transform: uppercase; display: flex; flex-direction: column; align-items: center; gap: 0.6rem;
+}
+.scroll-line {
+  width: 1px; height: 44px;
+  background: linear-gradient(to bottom, var(--gray-600), transparent);
+  animation: scrollPulse 2s ease-in-out infinite;
+}
+@keyframes scrollPulse { 0%,100%{opacity:0.3; transform:scaleY(0.8)} 50%{opacity:1; transform:scaleY(1)} }
+
+/* ── SHARED SECTION ── */
+section { padding: 7rem 3rem; max-width: 1200px; margin: 0 auto; }
+.section-eyebrow {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--gray-400); margin-bottom: 1.2rem;
+}
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.9rem, 4vw, 3.2rem);
+  font-weight: 700; line-height: 1.12; margin-bottom: 1rem;
+}
+.section-sub { color: var(--gray-400); font-size: 0.95rem; line-height: 1.75; max-width: 520px; }
+
+/* glass card base */
+.glass {
+  background: rgba(17,17,17,0.75);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+}
+
+/* ── ABOUT ── */
+#about { border-top: 1px solid var(--border); }
+.about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start; }
+.trusted-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray-400); margin-bottom: 1rem; margin-top: 3rem; }
+.logo-strip { display: flex; overflow: hidden; mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent); }
+.logo-strip-inner { display: flex; gap: 1.2rem; animation: marquee 22s linear infinite; }
+.logo-pill {
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  border-radius: 2rem; padding: 0.45rem 1.1rem;
+  font-size: 0.75rem; font-weight: 600; color: var(--gray-400);
+  white-space: nowrap; flex-shrink: 0;
+  backdrop-filter: blur(4px);
+}
+@keyframes marquee { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+
+/* ── PILLARS ── */
+#features { border-top: 1px solid var(--border); }
+.features-top { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 3.5rem; flex-wrap: wrap; gap: 2rem; }
+.pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+.pillar {
+  padding: 2rem; transition: border-color 0.3s, transform 0.3s;
+}
+.pillar:hover { border-color: var(--accent); transform: translateY(-5px); }
+.pillar-icon {
+  width: 2.6rem; height: 2.6rem; border-radius: 50%;
+  background: rgba(124,111,255,0.1); border: 1px solid rgba(124,111,255,0.25);
+  display: flex; align-items: center; justify-content: center; margin-bottom: 1.2rem;
+}
+.pillar-icon svg { width: 18px; height: 18px; }
+.pillar h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.6rem; }
+.pillar p { font-size: 0.85rem; color: var(--gray-400); line-height: 1.65; }
+
+/* ── PLATFORM ── */
+#platform { border-top: 1px solid var(--border); }
+.platform-top { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 3rem; flex-wrap: wrap; gap: 2rem; }
+.feature-tabs { display: flex; gap: 0.5rem; margin-bottom: 2rem; flex-wrap: wrap; }
+.tab-btn {
+  padding: 0.5rem 1.1rem; border-radius: 2rem;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--gray-400); font-size: 0.8rem; cursor: pointer;
+  transition: all 0.2s; font-family: inherit;
+}
+.tab-btn.active, .tab-btn:hover { background: var(--white); color: var(--black); border-color: var(--white); }
+.feature-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+.feature-card { overflow: hidden; transition: border-color 0.3s, transform 0.3s; }
+.feature-card:hover { border-color: #3a3a4a; transform: translateY(-3px); }
+.feature-card-visual {
+  width: 100%; height: 180px;
+  background: linear-gradient(135deg, rgba(13,13,31,0.9), rgba(26,16,64,0.9));
+  display: flex; align-items: center; justify-content: center;
+}
+.feature-card-visual svg { width: 64px; height: 64px; }
+.feature-card-body { padding: 1.5rem; }
+.feature-card-body h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
+.feature-card-body p { font-size: 0.82rem; color: var(--gray-400); line-height: 1.65; }
+
+/* ── APPROACH ── */
+#approach { border-top: 1px solid var(--border); }
+.approach-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin-top: 3rem; align-items: start; }
+.approach-items { display: flex; flex-direction: column; gap: 1.5rem; }
+.approach-item { display: flex; gap: 1rem; align-items: flex-start; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+.approach-item:last-child { border-bottom: none; }
+.approach-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; margin-top: 0.45rem; }
+.approach-item h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.3rem; }
+.approach-item p { font-size: 0.82rem; color: var(--gray-400); line-height: 1.65; }
+.approach-visual {
+  border-radius: 1rem; height: 430px;
+  background: linear-gradient(135deg, rgba(10,10,31,0.8), rgba(21,21,58,0.8));
+  border: 1px solid var(--border); backdrop-filter: blur(12px);
+  display: flex; align-items: center; justify-content: center;
+}
+.approach-visual svg { width: 190px; height: 190px; opacity: 0.75; }
+
+/* ── HOW ── */
+#how { border-top: 1px solid var(--border); }
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-top: 3rem; }
+.step { padding: 1.8rem; transition: border-color 0.3s, transform 0.3s; }
+.step:hover { border-color: var(--accent); transform: translateY(-5px); }
+.step-num { font-size: 0.68rem; font-weight: 700; color: var(--gray-600); letter-spacing: 0.1em; margin-bottom: 1.2rem; }
+.step-icon { margin-bottom: 1rem; }
+.step-icon svg { width: 26px; height: 26px; }
+.step h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; }
+.step p { font-size: 0.82rem; color: var(--gray-400); line-height: 1.65; }
+
+/* ── STATS ── */
+#stats { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); max-width: 100%; }
+#stats > section { max-width: 1200px; margin: 0 auto; }
+.stats-top { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 3rem; flex-wrap: wrap; gap: 2rem; }
+.stats-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1px; background: var(--border);
+  border: 1px solid var(--border); border-radius: 1rem; overflow: hidden;
+}
+.stat-item { background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); padding: 2.5rem 2rem; text-align: center; }
+.stat-num {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 700;
+  background: linear-gradient(135deg, #fff, #a78bfa);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 0.4rem;
+}
+.stat-label { font-size: 0.8rem; color: var(--gray-400); }
+
+/* ── TESTIMONIALS ── */
+#testimonials { border-top: 1px solid var(--border); }
+.testimonials-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 3rem; }
+.testimonial-card { padding: 2rem; transition: border-color 0.3s; }
+.testimonial-card.featured { grid-column: span 2; background: rgba(13,13,26,0.85); border-color: rgba(124,111,255,0.4); }
+.testimonial-card:hover { border-color: #3a3a4a; }
+.testimonial-card p { font-size: 0.95rem; line-height: 1.75; color: #ccc; margin-bottom: 1.5rem; }
+.testimonial-card.featured p { font-size: 1.2rem; color: var(--white); }
+.testimonial-author { display: flex; align-items: center; gap: 0.8rem; }
+.author-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), #ff6b9d); display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+.author-name { font-size: 0.875rem; font-weight: 600; }
+.author-role { font-size: 0.75rem; color: var(--gray-400); }
+
+/* ── TEAM ── */
+#team { border-top: 1px solid var(--border); }
+.team-sub { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray-400); margin: 0.5rem 0; }
+.team-desc { font-size: 0.9rem; color: var(--gray-400); max-width: 400px; margin-bottom: 2.5rem; }
+.team-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+.team-card { overflow: hidden; transition: border-color 0.3s; }
+.team-card:hover { border-color: #3a3a4a; }
+.team-card-visual {
+  height: 220px;
+  background: linear-gradient(135deg, rgba(13,13,32,0.9), rgba(17,17,48,0.9));
+  display: flex; align-items: center; justify-content: center;
+}
+.team-card-visual svg { width: 80px; height: 80px; opacity: 0.75; }
+.team-card-body { padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+.team-card-body h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.2rem; }
+.team-card-body span { font-size: 0.8rem; color: var(--gray-400); }
+.team-arrow { width: 2rem; height: 2rem; border-radius: 50%; background: #1e1e1e; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.2s; }
+.team-arrow svg { width: 13px; height: 13px; }
+.team-card:hover .team-arrow { background: var(--accent); }
+
+/* ── CTA BANNER ── */
+#cta-banner { background: var(--white); color: var(--black); text-align: center; padding: 5rem 2rem; max-width: 100%; position: relative; z-index: 10; }
+.cta-title { font-family: 'Playfair Display', serif; font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 700; color: var(--black); line-height: 1.12; margin-bottom: 2rem; }
+.btn-dark { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--black); color: var(--white); padding: 0.85rem 2rem; border-radius: 2rem; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: background 0.2s; }
+.btn-dark:hover { background: #333; }
+.btn-dark svg { width: 13px; height: 13px; }
+
+/* ── FOOTER ── */
+footer { background: rgba(0,0,0,0.95); border-top: 1px solid var(--border); padding: 3rem; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2rem; max-width: 1200px; margin: 0 auto; position: relative; z-index: 10; }
+.footer-brand .logo { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
+.footer-brand p { font-size: 0.8rem; color: var(--gray-400); line-height: 1.65; }
+.footer-col h4 { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gray-400); margin-bottom: 1rem; }
+.footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 0.6rem; }
+.footer-col ul a { font-size: 0.85rem; color: var(--gray-400); text-decoration: none; transition: color 0.2s; }
+.footer-col ul a:hover { color: var(--white); }
+.footer-bottom { border-top: 1px solid var(--border); padding: 1.5rem 3rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--gray-600); max-width: 1200px; margin: 0 auto; position: relative; z-index: 10; background: rgba(0,0,0,0.95); }
+
+/* ── PARTICLES ── */
+#particles { position: fixed; inset: 0; pointer-events: none; z-index: 2; overflow: hidden; }
+.particle { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: rgba(124,111,255,0.5); animation: floatUp linear infinite; }
+@keyframes floatUp { 0%{transform:translateY(100vh) translateX(0);opacity:0} 10%{opacity:1} 90%{opacity:0.4} 100%{transform:translateY(-10vh) translateX(var(--dx));opacity:0} }
+
+/* ── REVEAL ── */
+.reveal { opacity: 0; transform: translateY(32px); transition: opacity 0.75s ease, transform 0.75s ease; }
+.reveal.visible { opacity: 1; transform: none; }
+.reveal-left { opacity: 0; transform: translateX(-40px); transition: opacity 0.75s ease, transform 0.75s ease; }
+.reveal-left.visible { opacity: 1; transform: none; }
+.reveal-right { opacity: 0; transform: translateX(40px); transition: opacity 0.75s ease, transform 0.75s ease; }
+.reveal-right.visible { opacity: 1; transform: none; }
+.stagger > * { opacity: 0; transform: translateY(24px); transition: opacity 0.5s ease, transform 0.5s ease; }
+.stagger.visible > *:nth-child(1){opacity:1;transform:none;transition-delay:0.00s}
+.stagger.visible > *:nth-child(2){opacity:1;transform:none;transition-delay:0.10s}
+.stagger.visible > *:nth-child(3){opacity:1;transform:none;transition-delay:0.20s}
+.stagger.visible > *:nth-child(4){opacity:1;transform:none;transition-delay:0.30s}
+.stagger.visible > *:nth-child(5){opacity:1;transform:none;transition-delay:0.40s}
+.stagger.visible > *:nth-child(6){opacity:1;transform:none;transition-delay:0.50s}
+
+@media(max-width:768px){
+  nav{padding:1rem 1.5rem;} .nav-links{display:none;}
+  section{padding:4rem 1.5rem;}
+  .about-grid,.approach-grid,.pillars,.steps,.feature-cards,.testimonials-grid,.team-cards{grid-template-columns:1fr;}
+  .testimonial-card.featured{grid-column:span 1;}
+  footer{grid-template-columns:1fr;padding:2rem 1.5rem;}
+  .stats-grid{grid-template-columns:1fr;}
+  .features-top,.platform-top,.stats-top{flex-direction:column;align-items:flex-start;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="pct" id="loaderPct">0%</div>
+  <div class="load-label">Initializing EduTrack</div>
+</div>
+
+<!-- VIDEO BACKGROUND -->
+<div id="video-bg-wrap">
+  <video id="bg-video" src="spiral_edutrack.mp4" muted playsinline preload="auto"></video>
+</div>
+<div id="video-overlay"></div>
+
+<!-- PARTICLES -->
+<div id="particles"></div>
+
+<!-- NAV -->
+<nav id="navbar">
+  <a href="#" class="nav-logo">EduTrack</a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#about">About Us</a></li>
+    <li><a href="#testimonials">Testimonials</a></li>
+  </ul>
+  <a href="/auth" class="nav-cta">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0l1.8 5.5H16l-4.9 3.6 1.8 5.5L8 11l-4.9 3.6 1.8-5.5L0 5.5h6.2z"/></svg>
+    Start Studying
+  </a>
+</nav>
+
+<main>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-tag">AI-Powered Study Companion</div>
+  <h1 class="hero-title">Your AI-Powered<br>Study Companion.</h1>
+  <p class="hero-sub">Organize your syllabus, analyze exams, and optimize your study schedule with intelligent AI.</p>
+  <div class="hero-btns">
+    <a href="/auth" class="btn-primary">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0l1.8 5.5H16l-4.9 3.6 1.8 5.5L8 11l-4.9 3.6 1.8-5.5L0 5.5h6.2z"/></svg>
+      Start Studying
+    </a>
+    <a href="#features" class="btn-secondary">Learn More</a>
+  </div>
+  <div class="scroll-hint">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="about-grid">
+    <div class="reveal-left">
+      <div class="section-eyebrow">About Edu-Track</div>
+      <h2 class="section-title">Empowering students with AI-driven tools for smarter, more effective learning.</h2>
+    </div>
+    <div class="reveal-right">
+      <div class="trusted-label">Trusted By</div>
+      <h3 style="font-size:1.2rem;font-weight:600;margin-bottom:1.5rem;">Students aiming for excellence.</h3>
+      <div class="logo-strip">
+        <div class="logo-strip-inner">
+          <div class="logo-pill">Syllabus Pro</div>
+          <div class="logo-pill">MemoryEdge</div>
+          <div class="logo-pill">ExamPrep</div>
+          <div class="logo-pill">QuickStudy</div>
+          <div class="logo-pill">StudyLabs</div>
+          <div class="logo-pill">GradeBoost</div>
+          <div class="logo-pill">Syllabus Pro</div>
+          <div class="logo-pill">MemoryEdge</div>
+          <div class="logo-pill">ExamPrep</div>
+          <div class="logo-pill">QuickStudy</div>
+          <div class="logo-pill">StudyLabs</div>
+          <div class="logo-pill">GradeBoost</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES PILLARS -->
+<section id="features">
+  <div class="features-top">
+    <div class="reveal">
+      <div class="section-eyebrow">Features</div>
+      <h2 class="section-title">Built on three core<br>intelligent strategies.</h2>
+    </div>
+    <div class="reveal" style="text-align:right">
+      <p class="section-sub" style="max-width:340px">Intelligently organize your syllabus, analyze past exams, and optimize your study schedule.</p>
+      <a href="/auth" class="btn-primary" style="margin-top:1.5rem">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0l1.8 5.5H16l-4.9 3.6 1.8 5.5L8 11l-4.9 3.6 1.8-5.5L0 5.5h6.2z"/></svg>
+        Start Studying
+      </a>
+    </div>
+  </div>
+  <div class="pillars stagger">
+    <div class="pillar glass">
+      <div class="pillar-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      </div>
+      <h3>Efficiency</h3>
+      <p>Unlock your full potential with optimized study plans and smart recall sessions designed for maximum retention.</p>
+    </div>
+    <div class="pillar glass">
+      <div class="pillar-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      </div>
+      <h3>Insight-driven</h3>
+      <p>Leverage AI to uncover exam patterns, keyword heatmaps, and trend charts for a strategic study approach.</p>
+    </div>
+    <div class="pillar glass">
+      <div class="pillar-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <h3>Personalized</h3>
+      <p>Receive custom study tips and a readiness score adapting to your unique learning style and progress.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CORE PLATFORM -->
+<section id="platform">
+  <div class="platform-top">
+    <div class="reveal">
+      <div class="section-eyebrow">Our Platform</div>
+      <h2 class="section-title">Core Features.</h2>
+    </div>
+    <div class="reveal">
+      <p class="section-sub">Edu-Track converts raw academic content into structured, actionable insights, tracking your exam readiness.</p>
+      <a href="/auth" class="btn-primary" style="margin-top:1.5rem">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0l1.8 5.5H16l-4.9 3.6 1.8 5.5L8 11l-4.9 3.6 1.8-5.5L0 5.5h6.2z"/></svg>
+        Start Studying
+      </a>
+    </div>
+  </div>
+  <div class="feature-tabs">
+    <button class="tab-btn active">Dashboard</button>
+    <button class="tab-btn">Syllabus AI</button>
+    <button class="tab-btn">Memory Engine</button>
+    <button class="tab-btn">Exam Intel</button>
+  </div>
+  <div class="feature-cards stagger">
+    <div class="feature-card glass">
+      <div class="feature-card-visual">
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="4" width="24" height="24" rx="3" fill="#1e1b4b" stroke="#7c6fff" stroke-width="1.5"/>
+          <rect x="36" y="4" width="24" height="24" rx="3" fill="#1e1b4b" stroke="#7c6fff" stroke-width="1.5"/>
+          <rect x="4" y="36" width="24" height="24" rx="3" fill="#1e1b4b" stroke="#7c6fff" stroke-width="1.5"/>
+          <rect x="36" y="36" width="24" height="24" rx="3" fill="#1e1b4b" stroke="#7c6fff" stroke-width="1.5"/>
+          <polyline points="40,52 46,44 52,48" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="48" cy="16" r="6" stroke="#a78bfa" stroke-width="2"/>
+          <path d="M48 10 A6 6 0 0 1 54 16" stroke="#7c6fff" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="8" y1="44" x2="8" y2="52" stroke="#a78bfa" stroke-width="2" stroke-linecap="round"/>
+          <line x1="13" y1="40" x2="13" y2="52" stroke="#7c6fff" stroke-width="2" stroke-linecap="round"/>
+          <line x1="18" y1="47" x2="18" y2="52" stroke="#a78bfa" stroke-width="2" stroke-linecap="round"/>
+          <line x1="23" y1="42" x2="23" y2="52" stroke="#7c6fff" stroke-width="2" stroke-linecap="round"/>
+          <line x1="8" y1="10" x2="24" y2="10" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="8" y1="14" x2="20" y2="14" stroke="#444" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="8" y1="18" x2="22" y2="18" stroke="#444" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="feature-card-body"><h3>Dashboard</h3><p>Get a clear overview of subjects, readiness scores, and the Priority Engine guiding your next study step.</p></div>
+    </div>
+    <div class="feature-card glass">
+      <div class="feature-card-visual">
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="10" y="6" width="34" height="44" rx="3" fill="#1e1b4b" stroke="#7c6fff" stroke-width="1.5"/>
+          <line x1="17" y1="18" x2="37" y2="18" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="17" y1="24" x2="37" y2="24" stroke="#444" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="17" y1="30" x2="30" y2="30" stroke="#444" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="17" y1="36" x2="34" y2="36" stroke="#444" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="50" cy="46" r="10" fill="#0d0d2e" stroke="#a78bfa" stroke-width="1.5"/>
+          <path d="M50 40 L51.5 45 L57 46 L51.5 47 L50 52 L48.5 47 L43 46 L48.5 45 Z" fill="#a78bfa"/>
+        </svg>
+      </div>
+      <div class="feature-card-body"><h3>Syllabus AI</h3><p>Upload your syllabus for AI-generated study plans, dependency maps, and exam insights.</p></div>
+    </div>
+    <div class="feature-card glass">
+      <div class="feature-card-visual">
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M32 10 C20 10 12 18 12 28 C12 36 17 42 24 44 L24 54 L40 54 L40 44 C47 42 52 36 52 28 C52 18 44 10 32 10Z" fill="#1e1b4b" stroke="#7c6fff" stroke-width="1.5"/>
+          <path d="M32 18 C28 18 26 22 26 26" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M32 18 C36 18 38 22 38 26" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="22" y1="32" x2="42" y2="32" stroke="#7c6fff" stroke-width="1.2" stroke-linecap="round"/>
+          <circle cx="32" cy="26" r="3" fill="#a78bfa"/>
+          <line x1="28" y1="54" x2="36" y2="54" stroke="#7c6fff" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="feature-card-body"><h3>Memory Engine</h3><p>Master concepts with flashcard-style active recall sessions powered by the SM-2 algorithm.</p></div>
+    </div>
+    <div class="feature-card glass">
+      <div class="feature-card-visual">
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="32" cy="32" r="22" stroke="#7c6fff" stroke-width="1.5"/>
+          <circle cx="32" cy="32" r="14" stroke="#a78bfa" stroke-width="1.5"/>
+          <circle cx="32" cy="32" r="6" fill="#a78bfa" opacity="0.35"/>
+          <circle cx="32" cy="32" r="3" fill="#a78bfa"/>
+          <line x1="32" y1="4" x2="32" y2="10" stroke="#7c6fff" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="32" y1="54" x2="32" y2="60" stroke="#7c6fff" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="4" y1="32" x2="10" y2="32" stroke="#7c6fff" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="54" y1="32" x2="60" y2="32" stroke="#7c6fff" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="feature-card-body"><h3>Exam Intel</h3><p>Analyze past papers for keyword heatmaps, question types, and topic trends to optimize preparation.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- APPROACH -->
+<section id="approach">
+  <div class="reveal">
+    <div class="section-eyebrow">Our Approach</div>
+    <h2 class="section-title">Where smart studying meets<br>cutting-edge AI.</h2>
+    <p class="section-sub">A holistic approach to academic success, combining AI with proven learning techniques.</p>
+  </div>
+  <div class="approach-grid">
+    <div class="approach-items stagger reveal-left">
+      <div class="approach-item"><div class="approach-dot"></div><div><h3>AI-Powered</h3><p>Deep analysis and intelligent content generation at scale.</p></div></div>
+      <div class="approach-item"><div class="approach-dot"></div><div><h3>Spaced Repetition</h3><p>SM-2 algorithm for optimal memory retention and review scheduling.</p></div></div>
+      <div class="approach-item"><div class="approach-dot"></div><div><h3>Data-driven</h3><p>Insights on exam patterns, topic trends, and personalized readiness scores.</p></div></div>
+      <div class="approach-item"><div class="approach-dot"></div><div><h3>User-centric</h3><p>Intuitive workflow from syllabus upload to mastery proof.</p></div></div>
+      <div class="approach-item"><div class="approach-dot"></div><div><h3>Adaptive Learning</h3><p>Custom study tips tailored to your unique learning style.</p></div></div>
+    </div>
+    <div class="approach-visual reveal-right">
+      <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="100" cy="100" r="80" stroke="#7c6fff" stroke-width="1.5" opacity="0.5"/>
+        <ellipse cx="100" cy="100" rx="35" ry="80" stroke="#a78bfa" stroke-width="1" opacity="0.5"/>
+        <line x1="20" y1="100" x2="180" y2="100" stroke="#7c6fff" stroke-width="1" opacity="0.4"/>
+        <line x1="100" y1="20" x2="100" y2="180" stroke="#7c6fff" stroke-width="1" opacity="0.4"/>
+        <ellipse cx="100" cy="100" rx="80" ry="28" stroke="#7c6fff" stroke-width="1" opacity="0.3"/>
+        <circle cx="100" cy="100" r="5" fill="#a78bfa"/>
+        <circle cx="60" cy="70" r="3" fill="#7c6fff" opacity="0.8"/>
+        <circle cx="140" cy="85" r="3" fill="#7c6fff" opacity="0.8"/>
+        <circle cx="80" cy="130" r="3" fill="#7c6fff" opacity="0.8"/>
+        <circle cx="130" cy="125" r="2" fill="#a78bfa" opacity="0.6"/>
+        <line x1="100" y1="100" x2="60" y2="70" stroke="#a78bfa" stroke-width="0.8" opacity="0.5"/>
+        <line x1="100" y1="100" x2="140" y2="85" stroke="#a78bfa" stroke-width="0.8" opacity="0.5"/>
+        <line x1="100" y1="100" x2="80" y2="130" stroke="#a78bfa" stroke-width="0.8" opacity="0.5"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="reveal">
+    <div class="section-eyebrow">How It Works</div>
+    <h2 class="section-title">Our Simple Process.</h2>
+  </div>
+  <div class="steps stagger">
+    <div class="step glass">
+      <div class="step-num">01</div>
+      <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></div>
+      <h3>Onboard Subject</h3>
+      <p>Upload your syllabus (PDF/DOCX/TXT) or paste text to create a new subject.</p>
+    </div>
+    <div class="step glass">
+      <div class="step-num">02</div>
+      <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+      <h3>AI Plan Generation</h3>
+      <p>Our AI engine processes your content, generating a structured study plan and insights.</p>
+    </div>
+    <div class="step glass">
+      <div class="step-num">03</div>
+      <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
+      <h3>Study &amp; Recall</h3>
+      <p>Engage with the Memory Engine for flashcard sessions and optimal review scheduling.</p>
+    </div>
+    <div class="step glass">
+      <div class="step-num">04</div>
+      <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <h3>Analyze &amp; Master</h3>
+      <p>Upload past papers for exam intelligence and track your mastery and readiness score.</p>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div id="stats">
+  <section>
+    <div class="stats-top reveal">
+      <div>
+        <div class="section-eyebrow">Key Stats</div>
+        <h2 class="section-title">Tangible academic<br>advantages.</h2>
+      </div>
+      <div>
+        <p class="section-sub">Edu-Track turns academic content into actionable insights and improved performance.</p>
+        <a href="/auth" class="btn-primary" style="margin-top:1.5rem">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0l1.8 5.5H16l-4.9 3.6 1.8 5.5L8 11l-4.9 3.6 1.8-5.5L0 5.5h6.2z"/></svg>
+          Start Studying
+        </a>
+      </div>
+    </div>
+    <div class="stats-grid stagger">
+      <div class="stat-item"><div class="stat-num" data-target="1000">0</div><div class="stat-label">Syllabi Analyzed</div></div>
+      <div class="stat-item"><div class="stat-num">x2</div><div class="stat-label">Study Efficiency</div></div>
+      <div class="stat-item"><div class="stat-num">Minutes</div><div class="stat-label">To Get Started</div></div>
+      <div class="stat-item"><div class="stat-num" data-target="500">0</div><div class="stat-label">Happy Students</div></div>
+      <div class="stat-item"><div class="stat-num">-20%</div><div class="stat-label">Study Time</div></div>
+      <div class="stat-item"><div class="stat-num">5 yrs</div><div class="stat-label">Research</div></div>
+    </div>
+  </section>
+</div>
+
+<!-- TESTIMONIALS -->
+<section id="testimonials">
+  <div class="reveal">
+    <div class="section-eyebrow">Testimonials</div>
+    <h2 class="section-title">Hear from students who<br>aced their exams.</h2>
+  </div>
+  <div class="testimonials-grid stagger">
+    <div class="testimonial-card featured glass">
+      <p>"Edu-Track transformed how I approach studying. My scores improved dramatically across every subject."</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">SL</div>
+        <div><div class="author-name">Sarah L.</div><div class="author-role">University Student</div></div>
+      </div>
+    </div>
+    <div class="testimonial-card glass">
+      <p>"The AI syllabus analysis is a game-changer. I finally feel organized and confident for exams."</p>
+      <div class="testimonial-author">
+        <div class="author-avatar" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">DK</div>
+        <div><div class="author-name">David K.</div><div class="author-role">High School Senior</div></div>
+      </div>
+    </div>
+    <div class="testimonial-card glass">
+      <p>"The Memory Engine is incredible for retention. I wish I had this during my first year."</p>
+      <div class="testimonial-author">
+        <div class="author-avatar" style="background:linear-gradient(135deg,#10b981,#3b82f6)">ER</div>
+        <div><div class="author-name">Emily R.</div><div class="author-role">College Freshman</div></div>
+      </div>
+    </div>
+    <div class="testimonial-card glass">
+      <p>"Exam Intel revealed patterns in past papers I never noticed. It's like having a strategic edge."</p>
+      <div class="testimonial-author">
+        <div class="author-avatar" style="background:linear-gradient(135deg,#8b5cf6,#ec4899)">MS</div>
+        <div><div class="author-name">Michael S.</div><div class="author-role">Post-Graduate</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TEAM -->
+<section id="team">
+  <div class="reveal">
+    <div class="section-eyebrow">Team</div>
+    <h2 class="section-title">Meet the Minds Behind EduTrack.</h2>
+    <div class="team-sub">Visionaries</div>
+    <p class="team-desc">Dedicated to revolutionizing education through AI-powered study solutions.</p>
+  </div>
+  <div class="team-cards stagger">
+    <div class="team-card glass">
+      <div class="team-card-visual">
+        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="50" cy="35" r="18" fill="#1e1b4b" stroke="#7c6fff" stroke-width="1.5"/>
+          <path d="M20 90 C20 70 35 62 50 62 C65 62 80 70 80 90" fill="#1e1b4b" stroke="#7c6fff" stroke-width="1.5"/>
+          <circle cx="50" cy="35" r="8" fill="#a78bfa" opacity="0.25"/>
+          <line x1="43" y1="33" x2="47" y2="33" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="53" y1="33" x2="57" y2="33" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M45 40 Q50 44 55 40" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+        </svg>
+      </div>
+      <div class="team-card-body">
+        <div><h3>Jane Doe</h3><span>Chief AI Architect</span></div>
+        <div class="team-arrow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13L13 3M13 3H6M13 3v7"/></svg></div>
+      </div>
+    </div>
+    <div class="team-card glass">
+      <div class="team-card-visual">
+        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="50" cy="35" r="18" fill="#1e1b4b" stroke="#7c6fff" stroke-width="1.5"/>
+          <path d="M20 90 C20 70 35 62 50 62 C65 62 80 70 80 90" fill="#1e1b4b" stroke="#7c6fff" stroke-width="1.5"/>
+          <circle cx="50" cy="35" r="8" fill="#a78bfa" opacity="0.15"/>
+          <line x1="43" y1="33" x2="47" y2="33" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="53" y1="33" x2="57" y2="33" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="46" y1="40" x2="54" y2="40" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/>
+          <rect x="32" y="18" width="36" height="7" rx="3.5" fill="#1e1b4b" stroke="#7c6fff" stroke-width="1"/>
+        </svg>
+      </div>
+      <div class="team-card-body">
+        <div><h3>Alex Lee</h3><span>Lead Product Developer</span></div>
+        <div class="team-arrow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13L13 3M13 3H6M13 3v7"/></svg></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- CTA BANNER -->
+<div id="cta-banner">
+  <h2 class="cta-title">Ready to ace your<br>next exam?</h2>
+  <a href="/auth" class="btn-dark">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0l1.8 5.5H16l-4.9 3.6 1.8 5.5L8 11l-4.9 3.6 1.8-5.5L0 5.5h6.2z"/></svg>
+    Start Studying
+  </a>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-brand">
+    <div class="logo">EduTrack</div>
+    <p>Transform your study habits.<br><a href="mailto:edutrack.tech@gmail.com" style="color:#666;text-decoration:none;">edutrack.tech@gmail.com</a></p>
+  </div>
+  <div class="footer-col">
+    <h4>Explore</h4>
+    <ul>
+      <li><a href="#">Home</a></li>
+      <li><a href="#about">About Us</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how">How It Works</a></li>
+    </ul>
+  </div>
+  <div class="footer-col">
+    <h4>Connect</h4>
+    <ul>
+      <li><a href="#">X (Twitter)</a></li>
+      <li><a href="#">Instagram</a></li>
+      <li><a href="#">LinkedIn</a></li>
+    </ul>
+  </div>
+</footer>
+<div class="footer-bottom">
+  <span>© 2026 EduTrack Inc. All rights reserved.</span>
+  <span>support@edutrack.com</span>
+</div>
+
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+/* ── LOADER ── */
+(function(){
+  const loader = document.getElementById('loader');
+  const pct = document.getElementById('loaderPct');
+  let n = 0;
+  const iv = setInterval(() => {
+    n += Math.random() * 14;
+    if(n >= 100){ n = 100; clearInterval(iv); setTimeout(()=>loader.classList.add('hide'), 400); }
+    pct.textContent = Math.floor(n) + '%';
+  }, 80);
+})();
+
+/* ── VIDEO SCROLL SYNC ──
+   Seeking is decoupled from raw scroll events (which can fire in bursts)
+   and instead runs once per animation frame via gsap.ticker, easing
+   toward the target time. This can't fix a sparsely-keyframed source
+   file, but it removes the extra stutter caused by commanding several
+   seeks within a single frame. */
+(function(){
+  const video = document.getElementById('bg-video');
+  let scrollProgress = 0;
+  let smoothTime = 0;
+  let raf = null;
+
+  video.addEventListener('loadedmetadata', () => {
+    video.pause();
+    const duration = video.duration;
+
+    ScrollTrigger.create({
+      trigger: 'body',
+      start: 'top top',
+      end: 'bottom bottom',
+      onUpdate: (self) => { scrollProgress = self.progress; }
+    });
+
+    const tick = () => {
+      const targetTime = scrollProgress * duration;
+      // Ease toward the target instead of snapping — smooths out bursty
+      // scroll input and any seek latency from the video decoder.
+      smoothTime += (targetTime - smoothTime) * 0.25;
+      if (Math.abs(video.currentTime - smoothTime) > 0.03) {
+        video.currentTime = smoothTime;
+      }
+    };
+    gsap.ticker.add(tick);
+    raf = tick;
+
+    // Fade video opacity in/out based on section
+    gsap.to('#bg-video', {
+      opacity: 0.08,
+      scrollTrigger: {
+        trigger: '#cta-banner',
+        start: 'top 80%',
+        end: 'top 20%',
+        scrub: true
+      }
+    });
+  });
+
+  // Fallback: if video can't load, just animate background
+  video.addEventListener('error', () => {
+    document.getElementById('video-bg-wrap').style.display = 'none';
+    if (raf) gsap.ticker.remove(raf);
+  });
+})();
+
+/* ── NAV SCROLL CLASS ── */
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 60);
+});
+
+/* ── PARTICLES ── */
+(function(){
+  const c = document.getElementById('particles');
+  for(let i = 0; i < 20; i++){
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const x = Math.random() * 100;
+    const dur = 10 + Math.random() * 14;
+    const delay = Math.random() * 12;
+    const dx = (Math.random() - 0.5) * 180 + 'px';
+    p.style.cssText = `left:${x}%;animation-duration:${dur}s;animation-delay:-${delay}s;--dx:${dx};`;
+    c.appendChild(p);
+  }
+})();
+
+/* ── INTERSECTION REVEAL ── */
+(function(){
+  const els = document.querySelectorAll('.reveal,.reveal-left,.reveal-right,.stagger');
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  els.forEach(el => io.observe(el));
+})();
+
+/* ── COUNTER ── */
+(function(){
+  const counters = document.querySelectorAll('[data-target]');
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if(!e.isIntersecting) return;
+      const el = e.target, target = +el.dataset.target;
+      let cur = 0; const step = target / 60;
+      const iv = setInterval(() => {
+        cur = Math.min(cur + step, target);
+        el.textContent = Math.floor(cur) + '+';
+        if(cur >= target) clearInterval(iv);
+      }, 20);
+      io.unobserve(el);
+    });
+  }, { threshold: 0.5 });
+  counters.forEach(el => io.observe(el));
+})();
+
+/* ── TABS ── */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+/* ── GSAP HERO PARALLAX ── */
+gsap.to('#hero', {
+  yPercent: 18,
+  opacity: 0,
+  ease: 'none',
+  scrollTrigger: {
+    trigger: '#hero',
+    start: 'top top',
+    end: 'bottom top',
+    scrub: true
+  }
+});
+</script>
+</body>
+</html>
