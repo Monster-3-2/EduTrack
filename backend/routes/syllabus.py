@@ -15,7 +15,7 @@ from flask import Blueprint, request, jsonify
 bp = Blueprint('syllabus', __name__)
 
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_MODEL = "llama-3.1-8b-instant"  # FIX #2: switched to Gemma model
+GROQ_MODEL = "llama-3.3-70b-versatile"  # FIX #2: switched to Gemma model
 
 
 # ── Text extractors (unchanged) ────────────────────────────────────
